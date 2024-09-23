@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <EditText
+        android:id="@+id/addDevName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Developer Name" />
+
+    <EditText
+        android:id="@+id/addTaskId"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Task ID" />
+
+    <EditText
+        android:id="@+id/addStartDate"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Start Date" />
+
+    <EditText
+        android:id="@+id/addEndDate"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="End Date" />
+
+    <EditText
+        android:id="@+id/addTaskName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Task Name" />
+
+    <EditText
+        android:id="@+id/addEstimateDay"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Estimate Days" />
+</LinearLayout>

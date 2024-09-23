@@ -1,14 +1,15 @@
 package com.example.project_management;
 
 public class DevTask {
-    private int id;
+    private long id;
     private String devName;
     private int taskId;
     private String startDate;
     private String endDate;
     private String taskName;
     private int estimateDay;
-    public DevTask(int id, String devName, int taskId, String startDate, String endDate, String taskName, int estimateDay) {
+
+    public DevTask(long id, String devName, int taskId, String startDate, String endDate, String taskName, int estimateDay) {
         this.id = id;
         this.devName = devName;
         this.taskId = taskId;
@@ -18,7 +19,7 @@ public class DevTask {
         this.estimateDay = estimateDay;
     }
 
-    public int getId() {
+    public long getId() {
         return id;
     }
 
@@ -44,5 +45,34 @@ public class DevTask {
 
     public int getEstimateDay() {
         return estimateDay;
+    }
+
+    // Setters
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public void setDevName(String devName) {
+        this.devName = devName;
+    }
+
+    public void setTaskId(int taskId) {
+        this.taskId = taskId;
+    }
+
+    public void setStartDate(String startDate) {
+        this.startDate = startDate;
+    }
+
+    public void setEndDate(String endDate) {
+        this.endDate = endDate;
+    }
+
+    public void setTaskName(String taskName) {
+        this.taskName = taskName;
+    }
+
+    public void setEstimateDay(int estimateDay) {
+        this.estimateDay = estimateDay;
     }
 }
