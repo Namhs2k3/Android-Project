@@ -6,7 +6,10 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -15,17 +18,20 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.project_management.Database.DatabaseHelper;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
 public class DevTaskAdapter extends RecyclerView.Adapter<DevTaskAdapter.DevTaskViewHolder> {
 
     private List<DevTask> devTaskList;
+    private List<DevTask> devTaskListFull; // Danh sách đầy đủ để lưu trữ tất cả các task
     private Context context;
     private DatabaseHelper dbHelper;
 
-    public DevTaskAdapter(List<DevTask> devTaskList, Context context, DatabaseHelper dbHelper) {
+    public DevTaskAdapter(List<DevTask> devTaskList, List<DevTask> devTaskListFull, Context context, DatabaseHelper dbHelper) {
         this.devTaskList = devTaskList;
+        this.devTaskListFull = new ArrayList<>(devTaskList); // Sao lưu danh sách gốc
         this.context = context;
         this.dbHelper = dbHelper;
     }
@@ -44,7 +50,7 @@ public class DevTaskAdapter extends RecyclerView.Adapter<DevTaskAdapter.DevTaskV
         holder.tvTaskId.setText("Task ID: " + devTask.getTaskId());
         holder.tvStartDate.setText("Start Date: " + devTask.getStartDate());
         holder.tvEndDate.setText("End Date: " + devTask.getEndDate());
-        holder.tvTaskName.setText("Task Name: " + devTask.getTaskName());
+        holder.tvTaskName.setText(devTask.getTaskName());
         holder.tvEstimateDay.setText("Estimate Day: " + devTask.getEstimateDay());
 
         // Event click to edit or delete
@@ -59,35 +65,63 @@ public class DevTaskAdapter extends RecyclerView.Adapter<DevTaskAdapter.DevTaskV
         View view = LayoutInflater.from(context).inflate(R.layout.dialog_edit_task, null);
         builder.setView(view);
 
-        EditText etTaskName = view.findViewById(R.id.etTaskName);
+        EditText etDevName = view.findViewById(R.id.etDevName);
+        Spinner spinnerTaskName = view.findViewById(R.id.spinnerTaskName);
         EditText etStartDate = view.findViewById(R.id.etStartDate);
         EditText etEndDate = view.findViewById(R.id.etEndDate);
-        EditText etDevName = view.findViewById(R.id.etDevName);
         EditText etEstimateDay = view.findViewById(R.id.etEstimateDay);
-
-        etTaskName.setText(task.getTaskName());
-        etStartDate.setText(task.getStartDate());
-        etEndDate.setText(task.getEndDate());
-        etDevName.setText(task.getDevName());
-        etEstimateDay.setText(String.valueOf(task.getEstimateDay()));
 
         etStartDate.setOnClickListener(v -> showDateTimePicker(etStartDate));
         etEndDate.setOnClickListener(v -> showDateTimePicker(etEndDate));
 
+        // Lấy danh sách tasks từ cơ sở dữ liệu
+        List<Task> taskList = dbHelper.getAllTasks();
+        List<String> taskNames = new ArrayList<>();
+        for (Task t : taskList) {
+            taskNames.add(t.getTaskName());
+        }
+
+        // Thiết lập adapter cho Spinner
+        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(context, android.R.layout.simple_spinner_item, taskNames);
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerTaskName.setAdapter(spinnerAdapter);
+
+        // Thiết lập thông tin ban đầu
+        etDevName.setText(task.getDevName());
+        etStartDate.setText(task.getStartDate());
+        etEndDate.setText(task.getEndDate());
+        etEstimateDay.setText(String.valueOf(task.getEstimateDay()));
+
+        // Lấy Task ID và Estimate Day từ Task Name đã chọn
+        int[] selectedTaskId = {0};
+        spinnerTaskName.setSelection(taskNames.indexOf(task.getTaskName()));
+        spinnerTaskName.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
+                Task selectedTask = taskList.get(position);
+                selectedTaskId[0] = selectedTask.getTaskID();
+                etEstimateDay.setText(String.valueOf(selectedTask.getEstimateDay()));
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parentView) {
+                selectedTaskId[0] = 0; // Default value
+            }
+        });
+
         builder.setTitle("Edit Task")
                 .setPositiveButton("Save", (dialog, which) -> {
-                    long taskId = task.getTaskId(); // Lấy taskId từ task
-                    int estimateDay = Integer.parseInt(etEstimateDay.getText().toString()); // Lấy estimateDay từ EditText
-                    updateTask(position, task.getId(), etDevName.getText().toString(),
-                            taskId, etStartDate.getText().toString(), etEndDate.getText().toString());
+                    String devName = etDevName.getText().toString(); // Lấy tên developer
+                    updateTask(position, task.getId(), devName, selectedTaskId[0], etStartDate.getText().toString(), etEndDate.getText().toString());
                 })
                 .setNegativeButton("Delete", (dialog, which) -> {
-                    deleteTask(task.getId(), position); // Gọi deleteTask với ID của task
+                    deleteTask(task.getId(), position);
                 })
                 .setNeutralButton("Cancel", null);
 
         builder.create().show();
     }
+
 
     private void showDateTimePicker(EditText editText) {
         Calendar calendar = Calendar.getInstance();
@@ -115,26 +149,66 @@ public class DevTaskAdapter extends RecyclerView.Adapter<DevTaskAdapter.DevTaskV
     }
 
     // Method to update task
-    private void updateTask(int position, long id, String devName, long taskId, String startDate, String endDate) {
+    // Method to update task
+    private void updateTask(int position, long id, String devName, int taskId, String startDate, String endDate) {
+        // Cập nhật vào cơ sở dữ liệu
         dbHelper.updateDevTask(id, devName, taskId, startDate, endDate);
 
-        // Update the list
-        DevTask updatedTask = devTaskList.get(position);
-        updatedTask.setDevName(devName);
-        updatedTask.setTaskId((int) taskId); // Nếu taskId là long, chuyển đổi thành int nếu cần
-        updatedTask.setStartDate(startDate);
-        updatedTask.setEndDate(endDate);
+        // Cập nhật danh sách devTaskList
+        DevTask updatedTask = new DevTask(id, devName, taskId, startDate, endDate, getTaskNameById(taskId), getEstimateDayById(taskId));
 
-        // Notify adapter about the change
-        notifyItemChanged(position);
+        // Thay đổi task tại vị trí đã cho
+        devTaskList.set(position, updatedTask);
+
+        // Cập nhật adapter
+        notifyItemChanged(position); // Không cần gọi adapter
     }
 
 
-    // Method to delete task
+    private String getTaskNameById(int taskId) {
+        // Hàm lấy tên task dựa vào taskId
+        Task task = dbHelper.getTaskById(taskId); // Cần định nghĩa phương thức này trong DatabaseHelper
+        return task != null ? task.getTaskName() : "";
+    }
+
+    private int getEstimateDayById(int taskId) {
+        // Hàm lấy estimate day dựa vào taskId
+        Task task = dbHelper.getTaskById(taskId); // Cần định nghĩa phương thức này trong DatabaseHelper
+        return task != null ? task.getEstimateDay() : 0;
+    }
+
+
+
     private void deleteTask(long id, int position) {
         dbHelper.deleteDevTask((int) id); // Xóa task từ cơ sở dữ liệu
-        devTaskList.remove(position); // Xóa task khỏi danh sách
+
+        // Xóa task khỏi danh sách đầy đủ
+        DevTask taskToRemove = devTaskList.get(position);
+        devTaskList.remove(position);
+        devTaskListFull.remove(taskToRemove); // Đồng bộ với danh sách đầy đủ
+
         notifyItemRemoved(position); // Thông báo adapter về sự thay đổi
+        notifyItemRangeChanged(position, devTaskList.size()); // Cập nhật lại danh sách
+    }
+
+
+    public void filter(String text) {
+        List<DevTask> filteredList = new ArrayList<>();
+
+        if (text.isEmpty()) {
+            filteredList.addAll(devTaskListFull); // Hiển thị lại toàn bộ danh sách khi không có từ khóa
+        } else {
+            text = text.toLowerCase();
+            for (DevTask task : devTaskListFull) {
+                if (task.getTaskName().toLowerCase().contains(text) || task.getDevName().toLowerCase().contains(text)) {
+                    filteredList.add(task);
+                }
+            }
+        }
+
+        devTaskList.clear();
+        devTaskList.addAll(filteredList);
+        notifyDataSetChanged(); // Thông báo adapter rằng dữ liệu đã thay đổi
     }
 
 

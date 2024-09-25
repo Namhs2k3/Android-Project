@@ -6,6 +6,11 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
+import com.example.project_management.Task;
+
+import java.util.ArrayList;
+import java.util.List;
+
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "project_management.db";
@@ -64,12 +69,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         values.put(COL_TASK_NAME, "Order detail");
         values.put(COL_ESTIMATE_DAY, 3);
+        db.insert(TABLE_TASK, null, values);
 
         values.put(COL_TASK_NAME, "Product list");
         values.put(COL_ESTIMATE_DAY, 3);
+        db.insert(TABLE_TASK, null, values);
 
         values.put(COL_TASK_NAME, "Product detail");
         values.put(COL_ESTIMATE_DAY, 3);
+        db.insert(TABLE_TASK, null, values);
 
         values.put(COL_TASK_NAME, "Coupon list");
         values.put(COL_ESTIMATE_DAY, 3);
@@ -108,4 +116,37 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TABLE_DEV_TASK, COL_ID + " = ?", new String[]{String.valueOf(id)});
     }
+
+    public Task getTaskById(int taskId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query("task", null, "ID = ?", new String[]{String.valueOf(taskId)}, null, null, null);
+        if (cursor != null && cursor.moveToFirst()) {
+            int id = cursor.getInt(cursor.getColumnIndexOrThrow("ID"));
+            String taskName = cursor.getString(cursor.getColumnIndexOrThrow("TASK_NAME"));
+            int estimateDay = cursor.getInt(cursor.getColumnIndexOrThrow("ESTIMATE_DAY"));
+            cursor.close();
+            return new Task(id, taskName, estimateDay); // Giả định có constructor phù hợp
+        }
+        return null;
+    }
+
+    public List<Task> getAllTasks() {
+        List<Task> taskList = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT * FROM "+ TABLE_TASK, null);
+
+        if (cursor.moveToFirst()) {
+            do {
+                int taskID = cursor.getInt(cursor.getColumnIndexOrThrow("ID"));
+                String taskName = cursor.getString(cursor.getColumnIndexOrThrow(COL_TASK_NAME));
+                int estimateDay = cursor.getInt(cursor.getColumnIndexOrThrow(COL_ESTIMATE_DAY));
+
+                taskList.add(new Task(taskID, taskName, estimateDay));
+            } while (cursor.moveToNext());
+        }
+
+        cursor.close();
+        return taskList;
+    }
+
 }

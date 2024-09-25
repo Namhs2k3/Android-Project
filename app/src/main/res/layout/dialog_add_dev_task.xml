@@ -11,11 +11,7 @@
         android:layout_height="wrap_content"
         android:hint="Developer Name" />
 
-    <EditText
-        android:id="@+id/addTaskId"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Task ID" />
+
 
     <EditText
         android:id="@+id/addStartDate"
@@ -29,15 +25,22 @@
         android:layout_height="wrap_content"
         android:hint="End Date" />
 
-    <EditText
+    <Spinner
         android:id="@+id/addTaskName"
         android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <EditText
+        android:id="@+id/addTaskId"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Task Name" />
+        android:enabled="false"
+        android:hint="Task ID" />
 
     <EditText
         android:id="@+id/addEstimateDay"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:enabled="false"
         android:hint="Estimate Days" />
 </LinearLayout>
