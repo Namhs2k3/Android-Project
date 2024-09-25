@@ -8,6 +8,13 @@ public class DevTask {
     private String endDate;
     private String taskName;
     private int estimateDay;
+    private boolean checked;
+
+    public DevTask(int devtaskID, String taskName, String devName) {
+        this.taskId = devtaskID;
+        this.taskName = taskName;
+        this.devName = devName; // Giả sử devName là thuộc tính của DevTask
+    }
 
     public DevTask(long id, String devName, int taskId, String startDate, String endDate, String taskName, int estimateDay) {
         this.id = id;
@@ -74,5 +81,12 @@ public class DevTask {
 
     public void setEstimateDay(int estimateDay) {
         this.estimateDay = estimateDay;
+    }
+
+    public boolean isChecked() {
+        return checked; // Trả về trạng thái của CheckBox
+    }
+    public void setChecked(boolean checked) {
+        this.checked = checked; // Cập nhật trạng thái của CheckBox
     }
 }

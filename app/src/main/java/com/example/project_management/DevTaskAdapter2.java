@@ -8,6 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -22,39 +23,52 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
-public class DevTaskAdapter extends RecyclerView.Adapter<DevTaskAdapter.DevTaskViewHolder> {
+public class DevTaskAdapter2 extends RecyclerView.Adapter<DevTaskAdapter2.DevTaskViewHolder> {
 
     private List<DevTask> devTaskList;
     private List<DevTask> devTaskListFull; // Danh sách đầy đủ để lưu trữ tất cả các task
     private Context context;
     private DatabaseHelper dbHelper;
+    private List<Integer> selectedTaskIds = new ArrayList<>();
 
-    public DevTaskAdapter(List<DevTask> devTaskList, List<DevTask> devTaskListFull, Context context, DatabaseHelper dbHelper) {
+    public DevTaskAdapter2(List<DevTask> devTaskList, List<DevTask> devTaskListFull, Context context, DatabaseHelper dbHelper) {
         this.devTaskList = devTaskList;
         this.devTaskListFull = new ArrayList<>(devTaskList); // Sao lưu danh sách gốc
         this.context = context;
         this.dbHelper = dbHelper;
     }
 
-    public DevTaskAdapter(DeleteDevTaskActivity deleteDevTaskActivity, List<DevTask> devTaskList, List<DevTask> selectedDevTasks) {
+    public DevTaskAdapter2(DeleteDevTaskActivity deleteDevTaskActivity, List<DevTask> devTaskList, List<DevTask> selectedDevTasks) {
     }
 
     @NonNull
     @Override
     public DevTaskViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_dev_task, parent, false);
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.task_list_item, parent, false);
         return new DevTaskViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull DevTaskViewHolder holder, int position) {
         DevTask devTask = devTaskList.get(position);
-        holder.tvDevName.setText("Assignee: " + devTask.getDevName());
-        holder.tvTaskId.setText("Task ID: " + devTask.getTaskId());
-        holder.tvStartDate.setText("Start Date: " + devTask.getStartDate());
-        holder.tvEndDate.setText("End Date: " + devTask.getEndDate());
-        holder.tvTaskName.setText(devTask.getTaskName());
-        holder.tvEstimateDay.setText("Estimate Day: " + devTask.getEstimateDay());
+
+        holder.taskIdText.setText( devTask.getTaskName());
+        holder.taskNameText.setText("Assignee: " + devTask.getDevName());
+
+        // Thiết lập checkbox
+        holder.taskCheckbox.setChecked(selectedTaskIds.contains(devTask.getId()));
+
+        holder.taskCheckbox.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                // Thêm taskID vào danh sách nếu checkbox được chọn
+                if (!selectedTaskIds.contains(devTask.getTaskId())) {
+                    selectedTaskIds.add(devTask.getTaskId());
+                }
+            } else {
+                // Loại bỏ taskID khỏi danh sách nếu checkbox không được chọn
+                selectedTaskIds.remove(Integer.valueOf(devTask.getTaskId()));
+            }
+        });
 
         // Event click to edit or delete
         holder.itemView.setOnClickListener(v -> {
@@ -62,6 +76,22 @@ public class DevTaskAdapter extends RecyclerView.Adapter<DevTaskAdapter.DevTaskV
         });
     }
 
+    public void deleteSelectedTasks() {
+        for (int taskId : selectedTaskIds) {
+            dbHelper.deleteDevTask(taskId); // Gọi phương thức xóa từ cơ sở dữ liệu
+            // Cũng cần phải xóa khỏi danh sách hiển thị
+            // Tìm kiếm DevTask trong danh sách và xóa
+            for (int i = 0; i < devTaskList.size(); i++) {
+                if (devTaskList.get(i).getTaskId() == taskId) {
+                    devTaskList.remove(i);
+                    notifyItemRemoved(i);
+                    break; // Dừng vòng lặp sau khi đã xóa
+                }
+            }
+        }
+        // Xóa tất cả các taskID đã chọn
+        selectedTaskIds.clear();
+    }
     private void showEditDialog(DevTask task, int position) {
         // Create dialog to edit task
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
@@ -148,7 +178,7 @@ public class DevTaskAdapter extends RecyclerView.Adapter<DevTaskAdapter.DevTaskV
 
     @Override
     public int getItemCount() {
-        return devTaskList != null ? devTaskList.size() : 0; // Trả về 0 nếu devTaskList là null
+            return devTaskList != null ? devTaskList.size() : 0; // Trả về 0 nếu devTaskList là null
     }
 
     // Method to update task
@@ -216,17 +246,17 @@ public class DevTaskAdapter extends RecyclerView.Adapter<DevTaskAdapter.DevTaskV
 
 
     public static class DevTaskViewHolder extends RecyclerView.ViewHolder {
-        TextView tvDevName, tvTaskId, tvStartDate, tvEndDate, tvTaskName, tvEstimateDay;
+        CheckBox taskCheckbox;
+        TextView taskIdText;
+        TextView taskNameText;
 
         public DevTaskViewHolder(@NonNull View itemView) {
             super(itemView);
-            tvDevName = itemView.findViewById(R.id.tvDevName);
-            tvTaskId = itemView.findViewById(R.id.tvTaskId);
-            tvStartDate = itemView.findViewById(R.id.tvStartDate);
-            tvEndDate = itemView.findViewById(R.id.tvEndDate);
-            tvTaskName = itemView.findViewById(R.id.tvTaskName);
-            tvEstimateDay = itemView.findViewById(R.id.tvEstimateDay);
+            taskCheckbox = itemView.findViewById(R.id.taskCheckbox);
+            taskIdText = itemView.findViewById(R.id.taskIdText);
+            taskNameText = itemView.findViewById(R.id.taskNameText);
         }
     }
+
 }
 

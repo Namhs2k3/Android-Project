@@ -14,16 +14,20 @@
         android:padding="16dp">
 
         <TextView
+            android:id="@+id/tvTaskName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Task Name"
+            android:textStyle="bold"
+            android:textColor="#673AB7" />
+
+        <TextView
             android:id="@+id/tvTaskId"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Task ID" />
 
-        <TextView
-            android:id="@+id/tvTaskName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Task Name" />
+
 
         <TextView
             android:id="@+id/tvDevName"
