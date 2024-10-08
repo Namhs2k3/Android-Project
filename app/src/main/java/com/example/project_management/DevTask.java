@@ -1,6 +1,9 @@
 package com.example.project_management;
 
-public class DevTask {
+import android.os.Parcel;
+import android.os.Parcelable;
+
+public class DevTask implements Parcelable {
     private long id;
     private String devName;
     private int taskId;
@@ -19,6 +22,45 @@ public class DevTask {
         this.estimateDay = estimateDay;
     }
 
+    protected DevTask(Parcel in) {
+        id = in.readLong();
+        devName = in.readString();
+        taskId = in.readInt();
+        startDate = in.readString();
+        endDate = in.readString();
+        taskName = in.readString();
+        estimateDay = in.readInt();
+    }
+
+    public static final Creator<DevTask> CREATOR = new Creator<DevTask>() {
+        @Override
+        public DevTask createFromParcel(Parcel in) {
+            return new DevTask(in);
+        }
+
+        @Override
+        public DevTask[] newArray(int size) {
+            return new DevTask[size];
+        }
+    };
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeLong(id);
+        dest.writeString(devName);
+        dest.writeInt(taskId);
+        dest.writeString(startDate);
+        dest.writeString(endDate);
+        dest.writeString(taskName);
+        dest.writeInt(estimateDay);
+    }
+
+    // Getters and Setters
     public long getId() {
         return id;
     }

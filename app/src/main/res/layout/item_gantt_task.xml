@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#F1ECF3"
+    android:orientation="horizontal"
+    android:padding="8dp">
+
+    <!-- Task Name ở bên trái -->
+    <TextView
+        android:id="@+id/taskName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center_vertical"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <!-- Phần bên phải chứa Dev Name và biểu đồ Gantt -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="3"
+        android:background="#DBD0F2"
+        android:orientation="vertical">
+
+        <!-- Tên Dev ở trên -->
+        <TextView
+            android:id="@+id/devName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:textSize="14sp" />
+
+        <!-- Thanh biểu đồ Gantt ở dưới -->
+        <View
+            android:id="@+id/ganttBar"
+            android:layout_width="0dp"
+            android:layout_height="30dp"
+            android:layout_marginTop="8dp"
+            android:background="@android:color/holo_blue_dark" />
+    </LinearLayout>
+</LinearLayout>
