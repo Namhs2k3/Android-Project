@@ -39,5 +39,23 @@
             android:layout_height="30dp"
             android:layout_marginTop="8dp"
             android:background="@android:color/holo_blue_dark" />
+
+        <!-- Start Date -->
+        <TextView
+            android:id="@+id/startDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:textSize="12sp"
+            android:textColor="#000000" />
+
+        <!-- End Date -->
+        <TextView
+            android:id="@+id/endDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:textSize="12sp"
+            android:textColor="#000000" />
     </LinearLayout>
 </LinearLayout>

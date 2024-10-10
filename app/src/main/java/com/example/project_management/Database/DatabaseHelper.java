@@ -1,5 +1,6 @@
 package com.example.project_management.Database;
 
+import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -7,6 +8,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
 import com.example.project_management.Task;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -147,6 +149,23 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         cursor.close();
         return taskList;
+    }
+
+    @SuppressLint("Range")
+    public String getEarliestStartDate() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT MIN(strftime('%Y-%m-%d %H:%M', substr(" + COL_STARTDATE + ", 7, 4) || '-' || substr(" + COL_STARTDATE + ", 4, 2) || '-' || substr(" + COL_STARTDATE + ", 1, 2) || ' ' || substr(" + COL_STARTDATE + ", 12))) AS EarliestStartDate FROM " + TABLE_DEV_TASK;
+        Cursor cursor = db.rawQuery(query, null);
+        String earliestStartDate = null;
+
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                earliestStartDate = cursor.getString(cursor.getColumnIndex("EarliestStartDate"));
+            }
+            cursor.close();
+        }
+        db.close();
+        return earliestStartDate;
     }
 
 }

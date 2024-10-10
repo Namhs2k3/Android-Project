@@ -35,6 +35,10 @@ public class GanttChartAdapter extends RecyclerView.Adapter<GanttChartAdapter.Vi
         holder.devNameTextView.setText(devTask.getDevName());
         holder.taskName.setText(devTask.getTaskName());
 
+        // Set Start and End Dates
+        holder.startDate.setText(devTask.getStartDate());
+        holder.endDate.setText(devTask.getEndDate());
+
         // Tính toán chiều rộng và vị trí bắt đầu của thanh biểu đồ Gantt
         try {
             // Tính toán số ngày từ ngày bắt đầu biểu đồ Gantt đến ngày bắt đầu của task
@@ -64,11 +68,15 @@ public class GanttChartAdapter extends RecyclerView.Adapter<GanttChartAdapter.Vi
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView devNameTextView;
         TextView taskName;
+        TextView startDate;
+        TextView endDate;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             devNameTextView = itemView.findViewById(R.id.devName);
             taskName = itemView.findViewById(R.id.taskName);
+            startDate = itemView.findViewById(R.id.startDate);
+            endDate = itemView.findViewById(R.id.endDate);
         }
     }
 
@@ -81,5 +89,4 @@ public class GanttChartAdapter extends RecyclerView.Adapter<GanttChartAdapter.Vi
         // Tính số ngày giữa startDate và endDate
         return (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24); // Chuyển đổi từ milliseconds sang days
     }
-
 }
