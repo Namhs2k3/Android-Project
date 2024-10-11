@@ -3,59 +3,97 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="#F1ECF3"
-    android:orientation="horizontal"
+    android:orientation="vertical"
     android:padding="8dp">
 
-    <!-- Task Name ở bên trái -->
+    <!-- Task Name -->
     <TextView
         android:id="@+id/taskName"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
         android:gravity="center_vertical"
         android:textSize="16sp"
         android:textStyle="bold" />
 
-    <!-- Phần bên phải chứa Dev Name và biểu đồ Gantt -->
-    <LinearLayout
-        android:layout_width="0dp"
+    <!-- Tên Dev ở trên -->
+    <TextView
+        android:id="@+id/devName"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_weight="3"
-        android:background="#DBD0F2"
-        android:orientation="vertical">
+        android:gravity="center_horizontal"
+        android:textSize="14sp" />
 
-        <!-- Tên Dev ở trên -->
+    <!-- Thanh biểu đồ Gantt -->
+    <View
+        android:id="@+id/ganttBar"
+        android:layout_width="0dp"
+        android:layout_height="30dp"
+        android:layout_marginTop="8dp"
+        android:background="@android:color/holo_blue_dark" />
+
+    <!-- LinearLayout chứa các ngày trong tuần -->
+    <LinearLayout
+        android:id="@+id/weekDaysContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="4dp">
+
+        <!-- Thêm các TextView cho các ngày trong tuần -->
         <TextView
-            android:id="@+id/devName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center_horizontal"
-            android:textSize="14sp" />
-
-        <!-- Thanh biểu đồ Gantt ở dưới -->
-        <View
-            android:id="@+id/ganttBar"
+            android:id="@+id/day1"
             android:layout_width="0dp"
-            android:layout_height="30dp"
-            android:layout_marginTop="8dp"
-            android:background="@android:color/holo_blue_dark" />
-
-        <!-- Start Date -->
-        <TextView
-            android:id="@+id/startDate"
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center_horizontal"
-            android:textSize="12sp"
-            android:textColor="#000000" />
+            android:layout_weight="1"
+            android:text="Day 1"
+            android:gravity="center" />
 
-        <!-- End Date -->
         <TextView
-            android:id="@+id/endDate"
-            android:layout_width="wrap_content"
+            android:id="@+id/day2"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:gravity="center_horizontal"
-            android:textSize="12sp"
-            android:textColor="#000000" />
+            android:layout_weight="1"
+            android:text="Day 2"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/day3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Day 3"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/day4"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Day 4"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/day5"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Day 5"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/day6"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Day 6"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/day7"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Day 7"
+            android:gravity="center" />
     </LinearLayout>
 </LinearLayout>

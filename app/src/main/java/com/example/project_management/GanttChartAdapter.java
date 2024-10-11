@@ -1,25 +1,29 @@
 package com.example.project_management;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
 
 public class GanttChartAdapter extends RecyclerView.Adapter<GanttChartAdapter.ViewHolder> {
     private List<DevTask> devTaskList;
     private String chartStartDate; // Ngày bắt đầu của biểu đồ Gantt
+    private String weekStart; // Ngày bắt đầu của tuần để tính toán
 
-    public GanttChartAdapter(List<DevTask> devTaskList, String chartStartDate) {
+    public GanttChartAdapter(List<DevTask> devTaskList, String chartStartDate, String weekStart) {
         this.devTaskList = devTaskList;
         this.chartStartDate = chartStartDate; // Khởi tạo ngày bắt đầu của Gantt Chart
+        this.weekStart = weekStart; // Khởi tạo ngày bắt đầu của tuần
     }
 
     @NonNull
@@ -32,61 +36,68 @@ public class GanttChartAdapter extends RecyclerView.Adapter<GanttChartAdapter.Vi
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         DevTask devTask = devTaskList.get(position);
-        holder.devNameTextView.setText(devTask.getDevName());
         holder.taskName.setText(devTask.getTaskName());
+        holder.devNameTextView.setText(devTask.getDevName());
 
-        // Set Start and End Dates
-        holder.startDate.setText(devTask.getStartDate());
-        holder.endDate.setText(devTask.getEndDate());
-
-        // Tính toán chiều rộng và vị trí bắt đầu của thanh biểu đồ Gantt
+        // Sử dụng LocalDateTime với định dạng ngày và giờ
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm", Locale.getDefault());
         try {
-            // Tính toán số ngày từ ngày bắt đầu biểu đồ Gantt đến ngày bắt đầu của task
-            long daysFromChartStartToTaskStart = calculateDuration(chartStartDate, devTask.getStartDate());
-            long taskDuration = calculateDuration(devTask.getStartDate(), devTask.getEndDate());
+            LocalDateTime startDate;
+            LocalDateTime endDate;
 
-            // Chiều rộng của thanh Gantt (10dp cho mỗi ngày)
-            int width = (int) (taskDuration * 10);
-            // Tính toán vị trí bắt đầu của thanh Gantt
-            int marginStart = (int) (daysFromChartStartToTaskStart * 10);
+            try {
+                // Phân tích ngày bắt đầu và ngày kết thúc với cả ngày và giờ
+                startDate = LocalDateTime.parse(devTask.getStartDate(), dateTimeFormatter);
+                endDate = LocalDateTime.parse(devTask.getEndDate(), dateTimeFormatter);
+            } catch (DateTimeParseException e) {
+                Log.e("GanttChartLog", "Date parsing error: " + e.getMessage());
+                return;
+            }
 
-            View ganttBar = holder.itemView.findViewById(R.id.ganttBar);
-            ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) ganttBar.getLayoutParams();
-            params.width = width; // Thiết lập chiều rộng
-            params.setMarginStart(marginStart); // Thiết lập vị trí bắt đầu (marginStart)
-            ganttBar.setLayoutParams(params); // Cập nhật LayoutParams
-        } catch (ParseException e) {
-            e.printStackTrace();
+            // Tính toán tuần bắt đầu cho biểu đồ Gantt
+            LocalDateTime weekStartDate = LocalDateTime.parse(chartStartDate, dateTimeFormatter);
+
+            // Tính toán và hiển thị thanh Gantt
+            holder.itemView.post(() -> {
+                long totalDays = ChronoUnit.DAYS.between(weekStartDate.toLocalDate(), weekStartDate.plusDays(6).toLocalDate()) + 1;
+                long startDaysOffset = ChronoUnit.DAYS.between(weekStartDate.toLocalDate(), startDate.toLocalDate());
+                long endDaysOffset = ChronoUnit.DAYS.between(weekStartDate.toLocalDate(), endDate.toLocalDate());
+
+                int itemViewWidth = holder.itemView.getWidth();
+                ViewGroup.LayoutParams params = holder.ganttBar.getLayoutParams();
+
+                // Thiết lập chiều rộng của thanh Gantt
+                params.width = (int) ((endDaysOffset - startDaysOffset + 1) * (itemViewWidth / totalDays));
+                holder.ganttBar.setLayoutParams(params);
+
+                // Thiết lập vị trí của thanh Gantt
+                holder.ganttBar.setTranslationX((int) (startDaysOffset * (itemViewWidth / totalDays)));
+            });
+
+        } catch (DateTimeParseException e) {
+            Log.e("GanttChartLog", "Date parsing error: " + e.getMessage());
         }
     }
+
 
     @Override
     public int getItemCount() {
         return devTaskList.size();
     }
 
+    public void setWeekStart(String weekStart) {
+        this.weekStart = weekStart;
+    }
+
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView devNameTextView;
-        TextView taskName;
-        TextView startDate;
-        TextView endDate;
+        TextView taskName, devNameTextView;
+        View ganttBar;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            devNameTextView = itemView.findViewById(R.id.devName);
             taskName = itemView.findViewById(R.id.taskName);
-            startDate = itemView.findViewById(R.id.startDate);
-            endDate = itemView.findViewById(R.id.endDate);
+            devNameTextView = itemView.findViewById(R.id.devName);
+            ganttBar = itemView.findViewById(R.id.ganttBar);
         }
-    }
-
-    // Phương thức để tính toán số ngày giữa hai ngày
-    private long calculateDuration(String startDateStr, String endDateStr) throws ParseException {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy hh:mm", Locale.getDefault()); // Định dạng ngày
-        Date startDate = dateFormat.parse(startDateStr);
-        Date endDate = dateFormat.parse(endDateStr);
-
-        // Tính số ngày giữa startDate và endDate
-        return (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24); // Chuyển đổi từ milliseconds sang days
     }
 }
