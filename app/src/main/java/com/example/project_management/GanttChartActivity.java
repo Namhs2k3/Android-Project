@@ -49,9 +49,16 @@ public class GanttChartActivity extends AppCompatActivity {
             // Hiển thị tuần đầu tiên
             displayWeek(chartStartDate);
 
+            final String chartStartDateFinal = chartStartDate; // Tạo biến final
+            // Nút để quay lại tuần trước
+            Button btnPrevWeek = findViewById(R.id.btnPrevWeek);
+            btnPrevWeek.setOnClickListener(v -> {
+                weekOffset -= 1;
+                displayWeek(chartStartDateFinal); // Sử dụng biến final
+            });
+
             // Nút để chuyển đến tuần tiếp theo
             Button btnNextWeek = findViewById(R.id.btnNextWeek);
-            final String chartStartDateFinal = chartStartDate; // Tạo biến final
             btnNextWeek.setOnClickListener(v -> {
                 weekOffset += 1;
                 displayWeek(chartStartDateFinal); // Sử dụng biến final
@@ -128,8 +135,6 @@ public class GanttChartActivity extends AppCompatActivity {
         if (adapter != null) {
             adapter = new GanttChartAdapter(devTaskList, formattedLocalDateTime.replace("T"," ") , weekStart);
             recyclerView.setAdapter(adapter);
-            adapter.setWeekStart(weekStart);  // Cập nhật tuần mới cho adapter
-            adapter.notifyDataSetChanged();  // Làm mới dữ liệu
         } else {
             adapter = new GanttChartAdapter(devTaskList, chartStartDate, weekStart);
             recyclerView.setAdapter(adapter);
