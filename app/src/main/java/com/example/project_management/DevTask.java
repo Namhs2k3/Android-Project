@@ -1,6 +1,9 @@
 package com.example.project_management;
 
-public class DevTask {
+import android.os.Parcel;
+import android.os.Parcelable;
+
+public class DevTask implements Parcelable {
     private long id;
     private String devName;
     private int taskId;
@@ -8,13 +11,6 @@ public class DevTask {
     private String endDate;
     private String taskName;
     private int estimateDay;
-    private boolean checked;
-
-    public DevTask(int devtaskID, String taskName, String devName) {
-        this.taskId = devtaskID;
-        this.taskName = taskName;
-        this.devName = devName; // Giả sử devName là thuộc tính của DevTask
-    }
 
     public DevTask(long id, String devName, int taskId, String startDate, String endDate, String taskName, int estimateDay) {
         this.id = id;
@@ -26,6 +22,51 @@ public class DevTask {
         this.estimateDay = estimateDay;
     }
 
+    public DevTask(int taskId, String taskName, String devName){
+        this.taskId = taskId;
+        this.devName = devName;
+        this.taskName = taskName;
+    }
+
+    protected DevTask(Parcel in) {
+        id = in.readLong();
+        devName = in.readString();
+        taskId = in.readInt();
+        startDate = in.readString();
+        endDate = in.readString();
+        taskName = in.readString();
+        estimateDay = in.readInt();
+    }
+
+    public static final Creator<DevTask> CREATOR = new Creator<DevTask>() {
+        @Override
+        public DevTask createFromParcel(Parcel in) {
+            return new DevTask(in);
+        }
+
+        @Override
+        public DevTask[] newArray(int size) {
+            return new DevTask[size];
+        }
+    };
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeLong(id);
+        dest.writeString(devName);
+        dest.writeInt(taskId);
+        dest.writeString(startDate);
+        dest.writeString(endDate);
+        dest.writeString(taskName);
+        dest.writeInt(estimateDay);
+    }
+
+    // Getters and Setters
     public long getId() {
         return id;
     }
@@ -81,12 +122,5 @@ public class DevTask {
 
     public void setEstimateDay(int estimateDay) {
         this.estimateDay = estimateDay;
-    }
-
-    public boolean isChecked() {
-        return checked; // Trả về trạng thái của CheckBox
-    }
-    public void setChecked(boolean checked) {
-        this.checked = checked; // Cập nhật trạng thái của CheckBox
     }
 }

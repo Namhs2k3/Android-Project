@@ -1,10 +1,12 @@
 package com.example.project_management;
 
+import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -53,6 +55,14 @@ public class DeleteDevTaskActivity extends AppCompatActivity {
         Log.d("DeleteDevTaskActivity", "Adapter initialized");
 
         // Set up delete button click listener
+        ImageButton btnBack = findViewById(R.id.btnBack);
+        btnBack.setOnClickListener(v -> {
+            // Quay lại màn hình trước đó
+            // finish();
+            // Hoặc chuyển đến MainActivity
+            Intent intent1 = new Intent(DeleteDevTaskActivity.this, MainActivity.class);
+            startActivity(intent1);
+        });
         Button deleteButton = findViewById(R.id.deleteButton);
         deleteButton.setOnClickListener(v -> {
             devTaskAdapter.deleteSelectedTasks(); // Gọi phương thức xóa

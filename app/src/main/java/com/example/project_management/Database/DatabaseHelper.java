@@ -1,5 +1,6 @@
 package com.example.project_management.Database;
 
+import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -8,6 +9,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import com.example.project_management.DevTask;
 import com.example.project_management.Task;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -118,11 +120,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.delete(TABLE_DEV_TASK, COL_ID + " = ?", new String[]{String.valueOf(id)});
     }
 
-    public void deleteTask(int taskId) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        db.delete(TABLE_TASK, COL_ID + " = ?", new String[]{String.valueOf(taskId)});
-    }
-
     public Task getTaskById(int taskId) {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.query("task", null, "ID = ?", new String[]{String.valueOf(taskId)}, null, null, null);
@@ -155,29 +152,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return taskList;
     }
 
-    public List<DevTask> getAllDevTasks() {
-        List<DevTask> devTaskList = new ArrayList<>();
+    @SuppressLint("Range")
+    public String getEarliestStartDate() {
         SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT MIN(strftime('%Y-%m-%d %H:%M', substr(" + COL_STARTDATE + ", 7, 4) || '-' || substr(" + COL_STARTDATE + ", 4, 2) || '-' || substr(" + COL_STARTDATE + ", 1, 2) || ' ' || substr(" + COL_STARTDATE + ", 12))) AS EarliestStartDate FROM " + TABLE_DEV_TASK;
+        Cursor cursor = db.rawQuery(query, null);
+        String earliestStartDate = null;
 
-        Cursor cursor = getDevTasksWithDetails();
-        if (cursor.moveToFirst()) {
-            do {
-                int id = cursor.getInt(cursor.getColumnIndexOrThrow(COL_ID));
-                String devName = cursor.getString(cursor.getColumnIndexOrThrow(COL_DEV_NAME));
-                int taskId = cursor.getInt(cursor.getColumnIndexOrThrow(COL_TASKID));
-                String startDate = cursor.getString(cursor.getColumnIndexOrThrow(COL_STARTDATE));
-                int estimateDay = cursor.getInt(cursor.getColumnIndexOrThrow(COL_ESTIMATE_DAY));
-                String taskName = cursor.getString(cursor.getColumnIndexOrThrow(COL_TASK_NAME));
-                String endDate = cursor.getString(cursor.getColumnIndexOrThrow(COL_ENDDATE));
-
-                // Create DevTask object and add to the list
-                DevTask devTask = new DevTask(id, devName, taskId, startDate, endDate, taskName, estimateDay);
-                devTaskList.add(devTask);
-            } while (cursor.moveToNext());
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                earliestStartDate = cursor.getString(cursor.getColumnIndex("EarliestStartDate"));
+            }
+            cursor.close();
         }
-        cursor.close();
-        return devTaskList;
+        db.close();
+        return earliestStartDate;
     }
-
 
 }

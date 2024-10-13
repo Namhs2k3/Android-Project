@@ -4,33 +4,28 @@ import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.TimePickerDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.PopupMenu;
 import android.widget.Spinner;
+import android.widget.Switch;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.widget.SearchView;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.fragment.app.DialogFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -88,6 +83,13 @@ public class MainActivity extends AppCompatActivity {
         ImageButton settingsButton = findViewById(R.id.menu_settings);
         settingsButton.setOnClickListener(v -> showSettingsMenu()); // Gọi showSettingsMenu()
 
+//        // Load the preference in onCreate to apply it immediately
+//        SharedPreferences preferences = getSharedPreferences("settings", MODE_PRIVATE);
+//        boolean isEstimateDayVisible = preferences.getBoolean("showEstimateDay", false);
+//
+//        // Pass this value to the adapter initially
+//        adapter.setShowEstimateDay(isEstimateDayVisible);
+
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
@@ -103,7 +105,11 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
         });
+
+
     }
+
+
 
     private void showAddDevTaskDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -179,6 +185,12 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
+
+
+
+
+
+
     private void showDateTimePicker(EditText editText) {
         Calendar calendar = Calendar.getInstance();
         int year = calendar.get(Calendar.YEAR);
@@ -197,6 +209,7 @@ public class MainActivity extends AppCompatActivity {
 
         datePickerDialog.show();
     }
+
 
     private void loadDevTasks() {
         devTaskList = new ArrayList<>();
@@ -236,9 +249,10 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // Ánh xạ các button trong dialog
-        Button btnBack = dialog.findViewById(R.id.btnBack);
+        ImageButton btnBack = dialog.findViewById(R.id.btnBack);
         Button btnDeleteTask = dialog.findViewById(R.id.btn_delete_task);
-        Button btnAnotherAction = dialog.findViewById(R.id.btn_gantt_chart);
+        Button btnGanttChart = dialog.findViewById(R.id.btn_gantt_chart);
+        Switch switchEstimateDay = dialog.findViewById(R.id.switch_estimate_day);
 
 
         btnBack.setOnClickListener(v -> dialog.dismiss());
@@ -251,11 +265,28 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // Sự kiện khi click vào "Another Action"
-        btnAnotherAction.setOnClickListener(v -> {
-            // Thực hiện hành động khác
+        btnGanttChart.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, GanttChartActivity.class);
+
+            // Chuyển danh sách devTaskList qua Intent
+            intent.putParcelableArrayListExtra("devTaskList", (ArrayList<? extends Parcelable>) devTaskList);
+
             startActivity(intent);
-            dialog.dismiss(); // Đóng dialog
+        });
+
+        // Load the current preference from SharedPreferences
+        SharedPreferences preferences = getSharedPreferences("settings", MODE_PRIVATE);
+        boolean isEstimateDayVisible = preferences.getBoolean("showEstimateDay", true); // default to true
+        switchEstimateDay.setChecked(isEstimateDayVisible); // Set the switch state
+
+
+        // Handle switch toggle event
+        switchEstimateDay.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            SharedPreferences.Editor editor = preferences.edit();
+            editor.putBoolean("showEstimateDay", isChecked);
+            editor.apply();
+            // Update the adapter and notify it to show/hide the Estimate Day
+            adapter.setShowEstimateDay(isChecked); // You'll need to add this method to your adapter
         });
 
         // Hiển thị dialog

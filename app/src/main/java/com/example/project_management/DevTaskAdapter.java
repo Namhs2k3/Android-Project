@@ -54,7 +54,13 @@ public class DevTaskAdapter extends RecyclerView.Adapter<DevTaskAdapter.DevTaskV
         holder.tvStartDate.setText("Start Date: " + devTask.getStartDate());
         holder.tvEndDate.setText("End Date: " + devTask.getEndDate());
         holder.tvTaskName.setText(devTask.getTaskName());
-        holder.tvEstimateDay.setText("Estimate Day: " + devTask.getEstimateDay());
+
+        if (showEstimateDay) {
+            holder.tvEstimateDay.setVisibility(View.VISIBLE);
+            holder.tvEstimateDay.setText("Estimate Day: " + devTask.getEstimateDay());
+        } else {
+            holder.tvEstimateDay.setVisibility(View.GONE);
+        }
 
         // Event click to edit or delete
         holder.itemView.setOnClickListener(v -> {
@@ -227,6 +233,13 @@ public class DevTaskAdapter extends RecyclerView.Adapter<DevTaskAdapter.DevTaskV
             tvTaskName = itemView.findViewById(R.id.tvTaskName);
             tvEstimateDay = itemView.findViewById(R.id.tvEstimateDay);
         }
+    }
+
+    private boolean showEstimateDay = true; // Default to showing estimate day
+
+    public void setShowEstimateDay(boolean show) {
+        this.showEstimateDay = show;
+        notifyDataSetChanged(); // Refresh the RecyclerView
     }
 }
 

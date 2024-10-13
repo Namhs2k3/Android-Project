@@ -1,9 +1,11 @@
 package com.example.project_management;
 
+import android.app.Dialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
@@ -38,6 +40,16 @@ public class GanttChartActivity extends AppCompatActivity {
         // Nhận dữ liệu từ Intent
         Intent intent = getIntent();
         devTaskList = intent.getParcelableArrayListExtra("devTaskList");
+
+        ImageButton btnBack = findViewById(R.id.btnBack);
+        btnBack.setOnClickListener(v -> {
+            // Quay lại màn hình trước đó
+            // finish();
+            // Hoặc chuyển đến MainActivity
+             Intent intent1 = new Intent(GanttChartActivity.this, MainActivity.class);
+             startActivity(intent1);
+        });
+
 
         if (devTaskList != null && !devTaskList.isEmpty()) {
             DatabaseHelper dbHelper = new DatabaseHelper(this);
