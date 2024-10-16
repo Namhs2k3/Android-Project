@@ -12,17 +12,18 @@
         android:gravity="center_horizontal">
 
         <!-- Back Button -->
-        <Button
+        <ImageButton
             android:id="@+id/btnBack"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Trở về"
-            android:textColor="@android:color/white"
-            android:backgroundTint="@color/colorPrimary"
-            android:padding="12dp"
+            android:layout_gravity="start"
             android:layout_marginBottom="24dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Back"
             android:elevation="4dp"
-            android:layout_gravity="start" />
+            android:padding="8dp"
+            android:src="@drawable/ic_arrow_back"
+            android:textColor="@android:color/black" />
 
         <!-- Delete Task Button -->
         <Button
@@ -31,7 +32,7 @@
             android:layout_height="wrap_content"
             android:text="Delete Task"
             android:textColor="@android:color/white"
-            android:backgroundTint="@color/colorAccent"
+            android:backgroundTint="@color/colorPrimaryDark"
             android:padding="16dp"
             android:layout_marginBottom="16dp"
             android:elevation="4dp" />
@@ -48,6 +49,13 @@
             android:elevation="4dp" />
 
         <!-- Add more buttons or elements below -->
+        <Switch
+            android:id="@+id/switch_estimate_day"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:minHeight="48dp"
+            android:text="Display Estimate Day" />
 
     </LinearLayout>
 </ScrollView>

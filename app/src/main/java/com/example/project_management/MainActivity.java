@@ -80,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
         Log.d("MainActivity", searchView == null ? "SearchView is null" : "SearchView is OK");
 
         // Nút Settings
-        ImageButton settingsButton = findViewById(R.id.menu_settings);
+        ImageButton settingsButton = (ImageButton) findViewById(R.id.menu_settings);
         settingsButton.setOnClickListener(v -> showSettingsMenu()); // Gọi showSettingsMenu()
 
 //        // Load the preference in onCreate to apply it immediately
