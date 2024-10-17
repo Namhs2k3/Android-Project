@@ -1,3 +1,25 @@
 <resources>
     <string name="app_name">Project-Management</string>
+    <string name="devTask">Developer Tasks</string>
+    <string name="add">Add New Dev Task</string>
+    <string name="edit">Edit Dev Task</string>
+    <string name="devName">Dev Name</string>
+    <string name="taskName">Task Name</string>
+    <string name="startDate">Start Date</string>
+    <string name="endDate">End Date</string>
+    <string name="estimateDay">Estimate Days</string>
+    <string name="btnCancel">Cancel</string>
+    <string name="btnDel">Delete</string>
+    <string name="btnSave">Save</string>
+    <string name="btnAdd">Add</string>
+    <string name="ganttName">Project Plan</string>
+    <string name="btnPrev">Previous Week</string>
+    <string name="btnNext">Next Week</string>
+    <string name="day1">Day 1</string>
+    <string name="day2">Day 2</string>
+    <string name="day3">Day 3</string>
+    <string name="day4">Day 4</string>
+    <string name="day5">Day 5</string>
+    <string name="day6">Day 6</string>
+    <string name="day7">Day 7</string>
 </resources>

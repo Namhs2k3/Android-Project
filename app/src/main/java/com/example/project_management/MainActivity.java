@@ -8,6 +8,8 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
@@ -20,6 +22,10 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Spinner;
 import android.widget.Switch;
+
+import android.widget.Button;
+import android.widget.EditText;
+
 import android.widget.Toast;
 
 import androidx.appcompat.widget.SearchView;
@@ -31,9 +37,14 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.project_management.Database.DatabaseHelper;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -116,82 +127,182 @@ public class MainActivity extends AppCompatActivity {
         View view = getLayoutInflater().inflate(R.layout.dialog_add_dev_task, null);
 
         EditText etDevName = view.findViewById(R.id.addDevName);
-        EditText etTaskId = view.findViewById(R.id.addTaskId);
+        EditText etTaskName = view.findViewById(R.id.addTaskName);
         EditText etStartDate = view.findViewById(R.id.addStartDate);
         EditText etEndDate = view.findViewById(R.id.addEndDate);
         EditText etEstimateDay = view.findViewById(R.id.addEstimateDay);
-        Spinner spinnerTaskName = view.findViewById(R.id.addTaskName);
 
-        // Lấy danh sách tasks từ cơ sở dữ liệu
-        List<Task> taskList = dbHelper.getAllTasks();
-        List<String> taskNames = new ArrayList<>();
-        for (Task task : taskList) {
-            taskNames.add(task.getTaskName());
-        }
 
-        // Thiết lập adapter cho Spinner
-        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, taskNames);
-        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerTaskName.setAdapter(spinnerAdapter);
-
-        // Biến để lưu Task ID và Estimate Day
-        int[] selectedTaskId = {0};
-
-        // Lấy thông tin task được chọn
-        spinnerTaskName.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
-                Task selectedTask = taskList.get(position);
-                selectedTaskId[0] = selectedTask.getTaskID();
-                etTaskId.setText(String.valueOf(selectedTask.getTaskID()));
-                etEstimateDay.setText(String.valueOf(selectedTask.getEstimateDay()));
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parentView) {
-                etTaskId.setText("");
-                etEstimateDay.setText("");
-            }
-        });
-
+        AtomicInteger estimateDay = new AtomicInteger();
         // Thiết lập DatePicker cho Start Date
-        etStartDate.setOnClickListener(v -> showDateTimePicker(etStartDate));
+        etStartDate.setOnClickListener(v -> showDateTimePicker(etStartDate, () -> {
+            if (isStartDateAndEndDateHasValue(etStartDate.getText().toString().trim(), etEndDate.getText().toString().trim())) {
+                etEstimateDay.setEnabled(false); // Disable khi cả Start và End date đều có giá trị
+                updateEstimateDay(etStartDate, etEndDate, etEstimateDay);
+            } else {
+                if (isStartDateAndEndDateEmpty(etStartDate.getText().toString().trim(), etEndDate.getText().toString().trim())) {
+                    etEstimateDay.setEnabled(true); // Enable lại khi cả hai đều trống
+                }
+            }
+        }));
 
-        // Thiết lập DatePicker cho End Date
-        etEndDate.setOnClickListener(v -> showDateTimePicker(etEndDate));
+        etEndDate.setOnClickListener(v -> showDateTimePicker(etEndDate, () -> {
+            if (isStartDateAndEndDateHasValue(etStartDate.getText().toString().trim(), etEndDate.getText().toString().trim())) {
+                etEstimateDay.setEnabled(false); // Disable khi cả Start và End date đều có giá trị
+                updateEstimateDay(etStartDate, etEndDate, etEstimateDay);
+            } else {
+                if (isStartDateAndEndDateEmpty(etStartDate.getText().toString().trim(), etEndDate.getText().toString().trim())) {
+                    etEstimateDay.setEnabled(true); // Enable lại khi cả hai đều trống
+                }
+            }
+        }));
+
+        // Lắng nghe sự thay đổi trên Start Date và End Date
+        TextWatcher textWatcher = new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (isStartDateAndEndDateEmpty(etStartDate.getText().toString().trim(), etEndDate.getText().toString().trim())) {
+                    etEstimateDay.setEnabled(true); // Bật ô nhập Estimate Day
+                } else {
+                    etEstimateDay.setEnabled(false); // Tắt ô nhập Estimate Day
+                }
+            }
+        };
+
+        // Gán TextWatcher cho cả hai trường
+        etStartDate.addTextChangedListener(textWatcher);
+        etEndDate.addTextChangedListener(textWatcher);
 
         builder.setView(view)
                 .setTitle("Add Dev Task")
                 .setPositiveButton("Add", (dialog, which) -> {
                     String devName = etDevName.getText().toString();
+                    String taskName = etTaskName.getText().toString().trim();
                     String startDate = etStartDate.getText().toString();
                     String endDate = etEndDate.getText().toString();
-                    int taskId = selectedTaskId[0];
-                    String taskName = taskNames.get(spinnerTaskName.getSelectedItemPosition());
-                    int estimateDay = Integer.parseInt(etEstimateDay.getText().toString());
+
+                    Log.d("TAG", "startDate in add dialog: " + startDate);
+                    Log.d("TAG", "endDate in add dialog: " + endDate);
+
+                    if(!isTaskNameAndDevNameValid(taskName, devName)){
+                        Toast.makeText(this, "Both Task name and Dev name can not be null", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    // Kiểm tra trùng tên task
+                    if (dbHelper.isTaskNameExists(taskName)) {
+                        Toast.makeText(this, "Task name already exists!", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    if (!isStartDateAndEndDateHasValue(startDate, endDate)) {
+                        if(isStartDateAndEndDateEmpty(startDate, endDate))
+                            if(etEstimateDay.getText().length() >0)
+                                estimateDay.set(Integer.parseInt(etEstimateDay.getText().toString()));
+                            else
+                                estimateDay.set(0);
+                        else {
+                            Toast.makeText(this, "Both Start Date and End Date must either be both empty or both have values. If one has a value, the other must also have a value.", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                    }else
+                        estimateDay.set(Integer.parseInt(etEstimateDay.getText().toString()));
+
+                    if (!isValidDateRange(startDate, endDate)) {
+                        Toast.makeText(this, "End Date must be greater than or equal to Start Date.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
 
                     // Thêm task mới vào cơ sở dữ liệu
-                    long result = dbHelper.insertDevTask(devName, taskId, startDate, endDate);
+                    long result = dbHelper.insertDevTask(devName, taskName, startDate, endDate, estimateDay.get());
 
                     if (result != -1) { // Kiểm tra nếu thêm thành công
+                        // Lấy taskId từ result
+                        int taskId = (int) result; // Giả sử taskId được lấy từ result
                         // Cập nhật danh sách devTaskList
-                        devTaskList.add(new DevTask(result, devName, taskId, startDate, endDate, taskName, estimateDay));
-
+                        devTaskList.add(new DevTask(result, devName, taskName, startDate, endDate, estimateDay.get(), taskId)); // Cập nhật constructor
                         // Cập nhật lại adapter của RecyclerView/ListView
                         adapter.notifyDataSetChanged();
                     }
+                    Toast.makeText(this, "Add Dev Task Successfully!", Toast.LENGTH_LONG).show();
+
                 })
                 .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
                 .show();
     }
 
+    public boolean isStartDateAndEndDateHasValue(String startDate, String endDate) {
+        return (!startDate.isEmpty() && !endDate.isEmpty());
+    }
+    public boolean isStartDateAndEndDateEmpty(String startDate, String endDate) {
+        return (startDate.isEmpty() && endDate.isEmpty());
+    }
+    public boolean isTaskNameAndDevNameValid(String taskName, String devName){
+        return !(taskName.isEmpty() || devName.isEmpty());
+    }
+    // Hàm để cập nhật estimateDay
+    private void updateEstimateDay(EditText etStartDate, EditText etEndDate, EditText etEstimateDay) {
+        String startDate = etStartDate.getText().toString();
+        String endDate = etEndDate.getText().toString();
 
+        // Tính Estimate Day
+        if (!startDate.isEmpty() && !endDate.isEmpty()) {
+            int estimateDay = calculateEstimateDays(startDate, endDate);
+            etEstimateDay.setText(String.valueOf(estimateDay)); // Cập nhật EditText với giá trị tính toán
+        } else {
+            etEstimateDay.setText(""); // Nếu một trong hai rỗng, xóa giá trị estimateDay
+        }
+    }
 
+    public boolean isValidDateRange(String startDateStr, String endDateStr) {
+        if (startDateStr.isEmpty() || endDateStr.isEmpty()) {
+            return true; // Không cần kiểm tra nếu một trong hai trống
+        }
 
+        Log.d("TAG", "startDateStr: "+startDateStr);
+        Log.d("TAG", "endDateStr: "+endDateStr);
+        try {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
+            Log.e("TAG", "hihi: " );
+            Date startDate = dateFormat.parse(startDateStr);
+            Log.e("TAG", "hihi1: " );
+            Date endDate = dateFormat.parse(endDateStr);
+            Log.d("TAG", "startDate: "+startDate);
+            Log.d("TAG", "endDate: "+endDate);
+            return startDate != null && endDate != null && !startDate.after(endDate);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            Log.e("TAG", "Lỗi: "+e.getMessage());
+            return false;
+        }
+    }
 
+    public int calculateEstimateDays(String startDateStr, String endDateStr) {
+        if (startDateStr.isEmpty() || endDateStr.isEmpty()) {
+            return 0; // Không tính estimate nếu một trong hai trống
+        }
 
+        try {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
+            Date startDate = dateFormat.parse(startDateStr);
+            Date endDate = dateFormat.parse(endDateStr);
 
-    private void showDateTimePicker(EditText editText) {
+            if (startDate != null && endDate != null) {
+                long differenceInMillis = endDate.getTime() - startDate.getTime();
+                return (int) (differenceInMillis / (1000 * 60 * 60 * 24))+1; // Số ngày
+            }
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    private void showDateTimePicker(EditText editText, Runnable onDateSet) {
         Calendar calendar = Calendar.getInstance();
         int year = calendar.get(Calendar.YEAR);
         int month = calendar.get(Calendar.MONTH);
@@ -202,7 +313,10 @@ public class MainActivity extends AppCompatActivity {
         DatePickerDialog datePickerDialog = new DatePickerDialog(this, (view, selectedYear, selectedMonth, selectedDay) -> {
             TimePickerDialog timePickerDialog = new TimePickerDialog(this, (timeView, selectedHour, selectedMinute) -> {
                 String dateTime = String.format("%02d/%02d/%04d %02d:%02d", selectedDay, selectedMonth + 1, selectedYear, selectedHour, selectedMinute);
-                editText.setText(dateTime); // Thay vì textView.setText(dateTime);
+                editText.setText(dateTime); // Cập nhật EditText với ngày giờ đã chọn
+
+                // Gọi callback để cập nhật estimateDay
+                onDateSet.run();
             }, hour, minute, true);
             timePickerDialog.show();
         }, year, month, day);
@@ -211,13 +325,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+
     private void loadDevTasks() {
         devTaskList = new ArrayList<>();
         Cursor cursor = dbHelper.getDevTasksWithDetails();
 
         if (cursor != null && cursor.moveToFirst()) {
             do {
-                int id = cursor.getInt(cursor.getColumnIndexOrThrow("ID"));
+                long id = cursor.getLong(cursor.getColumnIndexOrThrow("ID"));
                 String devName = cursor.getString(cursor.getColumnIndexOrThrow("DEV_NAME"));
                 int taskId = cursor.getInt(cursor.getColumnIndexOrThrow("TASKID"));
                 String startDate = cursor.getString(cursor.getColumnIndexOrThrow("STARTDATE"));
@@ -226,7 +341,7 @@ public class MainActivity extends AppCompatActivity {
                 int estimateDay = cursor.getInt(cursor.getColumnIndexOrThrow("ESTIMATE_DAY"));
 
                 // Thêm vào danh sách
-                devTaskList.add(new DevTask(id, devName, taskId, startDate, endDate, taskName, estimateDay));
+                devTaskList.add(new DevTask(id, devName, taskName, startDate, endDate, estimateDay, taskId));
             } while (cursor.moveToNext());
         }
 

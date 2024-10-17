@@ -6,20 +6,19 @@ import android.os.Parcelable;
 public class DevTask implements Parcelable {
     private long id;
     private String devName;
-    private int taskId;
     private String startDate;
     private String endDate;
     private String taskName;
     private int estimateDay;
-
-    public DevTask(long id, String devName, int taskId, String startDate, String endDate, String taskName, int estimateDay) {
+    private int taskId;
+    public DevTask(long id, String devName,String taskName, String startDate, String endDate, int estimateDay, int taskId) {
         this.id = id;
         this.devName = devName;
-        this.taskId = taskId;
         this.startDate = startDate;
         this.endDate = endDate;
         this.taskName = taskName;
         this.estimateDay = estimateDay;
+        this.taskId = taskId;
     }
 
     public DevTask(int taskId, String taskName, String devName){
@@ -31,13 +30,17 @@ public class DevTask implements Parcelable {
     protected DevTask(Parcel in) {
         id = in.readLong();
         devName = in.readString();
-        taskId = in.readInt();
+        taskName = in.readString();
         startDate = in.readString();
         endDate = in.readString();
         taskName = in.readString();
         estimateDay = in.readInt();
     }
 
+    // Getter cho taskId
+    public int getTaskId() {
+        return taskId;
+    }
     public static final Creator<DevTask> CREATOR = new Creator<DevTask>() {
         @Override
         public DevTask createFromParcel(Parcel in) {
@@ -59,7 +62,7 @@ public class DevTask implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeLong(id);
         dest.writeString(devName);
-        dest.writeInt(taskId);
+        dest.writeString(taskName);
         dest.writeString(startDate);
         dest.writeString(endDate);
         dest.writeString(taskName);
@@ -75,9 +78,6 @@ public class DevTask implements Parcelable {
         return devName;
     }
 
-    public int getTaskId() {
-        return taskId;
-    }
 
     public String getStartDate() {
         return startDate;
@@ -102,10 +102,6 @@ public class DevTask implements Parcelable {
 
     public void setDevName(String devName) {
         this.devName = devName;
-    }
-
-    public void setTaskId(int taskId) {
-        this.taskId = taskId;
     }
 
     public void setStartDate(String startDate) {

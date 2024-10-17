@@ -13,7 +13,7 @@
         android:id="@+id/tvTitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Developer Tasks"
+        android:text="@string/devTask"
         android:textSize="36dp"
         android:textStyle="bold"
         android:gravity="center_vertical"

@@ -9,34 +9,30 @@
         android:id="@+id/etDevName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Developer Name"
-        android:minHeight="48dp" />
+        android:hint="@string/devName" />
 
-    <Spinner
-        android:id="@+id/spinnerTaskName"
+    <EditText
+        android:id="@+id/etTaskName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:minHeight="48dp" />
+        android:hint="@string/taskName"/>
 
     <EditText
         android:id="@+id/etStartDate"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Start Date"
-        android:minHeight="48dp" />
+        android:hint="@string/startDate" />
 
     <EditText
         android:id="@+id/etEndDate"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="End Date"
-        android:minHeight="48dp" />
+        android:hint="@string/endDate" />
 
     <EditText
         android:id="@+id/etEstimateDay"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:enabled="false"
-        android:hint="Estimate Days"
-        android:minHeight="48dp" />
+        android:enabled="true"
+        android:hint="@string/estimateDay" />
 </LinearLayout>

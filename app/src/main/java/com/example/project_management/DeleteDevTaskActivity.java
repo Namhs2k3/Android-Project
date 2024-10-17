@@ -76,12 +76,16 @@ public class DeleteDevTaskActivity extends AppCompatActivity {
 
         if (cursor != null && cursor.moveToFirst()) {
             do {
-                int taskId = cursor.getInt(cursor.getColumnIndexOrThrow("ID"));
-                String taskName = cursor.getString(cursor.getColumnIndexOrThrow("TASK_NAME"));// Lấy task ID
-                String devName = cursor.getString(cursor.getColumnIndexOrThrow("DEV_NAME")); // Lấy tên
+                long id = cursor.getLong(cursor.getColumnIndexOrThrow("ID"));
+                String devName = cursor.getString(cursor.getColumnIndexOrThrow("DEV_NAME"));
+                int taskId = cursor.getInt(cursor.getColumnIndexOrThrow("TASKID"));
+                String startDate = cursor.getString(cursor.getColumnIndexOrThrow("STARTDATE"));
+                String endDate = cursor.getString(cursor.getColumnIndexOrThrow("ENDDATE"));
+                String taskName = cursor.getString(cursor.getColumnIndexOrThrow("TASK_NAME"));
+                int estimateDay = cursor.getInt(cursor.getColumnIndexOrThrow("ESTIMATE_DAY"));
 
-                // Thêm vào danh sách với ID và tên
-                devTaskList.add(new DevTask(taskId, taskName, devName)); // Sử dụng constructor mới
+                // Thêm vào danh sách
+                devTaskList.add(new DevTask(id, devName, taskName, startDate, endDate, estimateDay, taskId));
             } while (cursor.moveToNext());
         }
 
@@ -89,8 +93,8 @@ public class DeleteDevTaskActivity extends AppCompatActivity {
             cursor.close();
         }
 
-        // Sắp xếp danh sách nếu cần (tùy chọn)
-        devTaskList.sort(Comparator.comparing(DevTask::getDevName)); // Giả sử DevTask có phương thức getDevName()
+        // Sắp xếp danh sách theo Task ID
+        devTaskList.sort((task1, task2) -> Integer.compare(task1.getTaskId(), task2.getTaskId()));
     }
 
 

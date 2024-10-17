@@ -6,13 +6,18 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import com.example.project_management.DevTask;
 import com.example.project_management.Task;
 
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
@@ -66,26 +71,39 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public void insertSampleData(SQLiteDatabase db) {
         ContentValues values = new ContentValues();
-        values.put(COL_TASK_NAME, "Order List");
-        values.put(COL_ESTIMATE_DAY, 5);
-        db.insert(TABLE_TASK, null, values);
 
-        values.put(COL_TASK_NAME, "Order detail");
-        values.put(COL_ESTIMATE_DAY, 3);
-        db.insert(TABLE_TASK, null, values);
+        // Check if the task already exists before inserting
+        if (!isTaskExists(db, "Order List")) {
+            values.put(COL_TASK_NAME, "Order List");
+            values.put(COL_ESTIMATE_DAY, 5);
+            db.insert(TABLE_TASK, null, values);
+        }
 
-        values.put(COL_TASK_NAME, "Product list");
-        values.put(COL_ESTIMATE_DAY, 3);
-        db.insert(TABLE_TASK, null, values);
+        if (!isTaskExists(db, "Order detail")) {
+            values.put(COL_TASK_NAME, "Order detail");
+            values.put(COL_ESTIMATE_DAY, 3);
+            db.insert(TABLE_TASK, null, values);
+        }
 
-        values.put(COL_TASK_NAME, "Product detail");
-        values.put(COL_ESTIMATE_DAY, 3);
-        db.insert(TABLE_TASK, null, values);
+        if (!isTaskExists(db, "Product list")) {
+            values.put(COL_TASK_NAME, "Product list");
+            values.put(COL_ESTIMATE_DAY, 3);
+            db.insert(TABLE_TASK, null, values);
+        }
 
-        values.put(COL_TASK_NAME, "Coupon list");
-        values.put(COL_ESTIMATE_DAY, 3);
-        db.insert(TABLE_TASK, null, values);
+        if (!isTaskExists(db, "Product detail")) {
+            values.put(COL_TASK_NAME, "Product detail");
+            values.put(COL_ESTIMATE_DAY, 3);
+            db.insert(TABLE_TASK, null, values);
+        }
+
+        if (!isTaskExists(db, "Coupon list")) {
+            values.put(COL_TASK_NAME, "Coupon list");
+            values.put(COL_ESTIMATE_DAY, 3);
+            db.insert(TABLE_TASK, null, values);
+        }
     }
+
 
     public Cursor getDevTasksWithDetails() {
         SQLiteDatabase db = this.getReadableDatabase();
@@ -95,30 +113,109 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return db.rawQuery(query, null);
     }
 
-    public long insertDevTask(String devName, long taskId, String startDate, String endDate) {
+    public long insertDevTask(String devName, String taskName, String startDate, String endDate, int estimateDay) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
+        long taskID = insertTask(taskName, estimateDay);
         values.put(COL_DEV_NAME, devName);
-        values.put(COL_TASKID, taskId);
+        values.put(COL_TASKID, taskID);
         values.put(COL_STARTDATE, startDate);
         values.put(COL_ENDDATE, endDate);
-        return db.insert(TABLE_DEV_TASK, null, values);
+
+        db.insert(TABLE_DEV_TASK, null, values);
+
+        return taskID;
     }
 
-    public void updateDevTask(long id, String devName, long taskId, String startDate, String endDate) {
+    public long insertTask(String taskName, int estimateDay){
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        // Kiểm tra nếu task đã tồn tại
+        String query = "SELECT " + COL_ID + " FROM " + TABLE_TASK + " WHERE " + COL_TASK_NAME + " = ?";
+        Cursor cursor = db.rawQuery(query, new String[]{taskName});
+
+        if (cursor.moveToFirst()) {
+            // Task đã tồn tại, trả về taskID
+            long taskID = cursor.getLong(cursor.getColumnIndexOrThrow(COL_ID));
+            cursor.close();
+            return taskID;
+        }
+
+        // Nếu không tồn tại, thêm mới task
+        ContentValues values = new ContentValues();
+        values.put(COL_TASK_NAME, taskName);
+        values.put(COL_ESTIMATE_DAY, estimateDay);
+
+        long taskID = db.insert(TABLE_TASK, null, values);
+        cursor.close();
+        return taskID;
+    }
+
+
+
+    public void updateDevTask(long id, String devName, String taskName, String startDate, String endDate, int estimateDay, int taskID) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
+        ContentValues values2 = new ContentValues();
+
         values.put(COL_DEV_NAME, devName);
-        values.put(COL_TASKID, taskId);
         values.put(COL_STARTDATE, startDate);
         values.put(COL_ENDDATE, endDate);
+
+        values2.put(COL_TASK_NAME, taskName);
+        values2.put(COL_ESTIMATE_DAY, estimateDay);
+
         db.update(TABLE_DEV_TASK, values, COL_ID + " = ?", new String[]{String.valueOf(id)});
+        db.update(TABLE_TASK, values2,   "ID = ?", new String[]{String.valueOf(taskID)});
+
     }
 
-    public void deleteDevTask(int id) {
+    public int calculateEstimateDays(String startDateStr, String endDateStr) {
+        if (startDateStr.isEmpty() || endDateStr.isEmpty()) {
+            return 0; // Không tính estimate nếu một trong hai trống
+        }
+
+        try {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
+            Date startDate = dateFormat.parse(startDateStr);
+            Date endDate = dateFormat.parse(endDateStr);
+
+            if (startDate != null && endDate != null) {
+                long differenceInMillis = endDate.getTime() - startDate.getTime();
+                return (int) (differenceInMillis / (1000 * 60 * 60 * 24)) +1; // Số ngày
+            }
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public void deleteDevTask(int id, int taskId) {
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TABLE_DEV_TASK, COL_ID + " = ?", new String[]{String.valueOf(id)});
+        db.delete(TABLE_TASK, COL_ID + " = ?", new String[]{String.valueOf(taskId)});
     }
+
+    public int getIdByTaskId(int taskId) {
+        int id = -1; // Biến mặc định cho trường hợp không tìm thấy
+
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(
+                TABLE_DEV_TASK,                         // Bảng
+                new String[]{COL_ID},                   // Cột muốn lấy
+                COL_TASKID + " = ?",                   // Điều kiện WHERE
+                new String[]{String.valueOf(taskId)},   // Giá trị của điều kiện
+                null, null, null                        // Nhóm, bộ lọc, sắp xếp
+        );
+
+        if (cursor != null && cursor.moveToFirst()) {
+            id = cursor.getInt(cursor.getColumnIndexOrThrow(COL_ID)); // Lấy id của task
+            cursor.close();
+        }
+
+        return id; // Trả về id, nếu không tìm thấy sẽ trả về -1
+    }
+
 
     public Task getTaskById(int taskId) {
         SQLiteDatabase db = this.getReadableDatabase();
@@ -168,5 +265,22 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.close();
         return earliestStartDate;
     }
+    public boolean isTaskExists(SQLiteDatabase db, String taskName) {
+        String query = "SELECT 1 FROM " + TABLE_TASK + " WHERE " + COL_TASK_NAME + " = ?";
+        Cursor cursor = db.rawQuery(query, new String[]{taskName});
+        boolean exists = (cursor.getCount() > 0);
+        cursor.close();
+        return exists;
+    }
+
+    public boolean isTaskNameExists(String taskName) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT * FROM " + TABLE_TASK + " WHERE LOWER(task_name) = ?";
+        Cursor cursor = db.rawQuery(query, new String[]{taskName.toLowerCase()});
+        boolean exists = (cursor.getCount() > 0);
+        cursor.close();
+        return exists;
+    }
+
 
 }

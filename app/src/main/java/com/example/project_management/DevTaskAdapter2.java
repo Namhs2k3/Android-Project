@@ -3,6 +3,7 @@ package com.example.project_management;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,6 +13,7 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -19,9 +21,13 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.project_management.Database.DatabaseHelper;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class DevTaskAdapter2 extends RecyclerView.Adapter<DevTaskAdapter2.DevTaskViewHolder> {
 
@@ -78,11 +84,14 @@ public class DevTaskAdapter2 extends RecyclerView.Adapter<DevTaskAdapter2.DevTas
 
     public void deleteSelectedTasks() {
         for (int taskId : selectedTaskIds) {
-            dbHelper.deleteDevTask(taskId); // Gọi phương thức xóa từ cơ sở dữ liệu
+            int id = dbHelper.getIdByTaskId(taskId);
+            dbHelper.deleteDevTask(id, taskId); // Gọi phương thức xóa từ cơ sở dữ liệu
+            Log.e("TAG", "id: "+ id +" And TaskID is: "+taskId );
             // Cũng cần phải xóa khỏi danh sách hiển thị
             // Tìm kiếm DevTask trong danh sách và xóa
             for (int i = 0; i < devTaskList.size(); i++) {
                 if (devTaskList.get(i).getTaskId() == taskId) {
+
                     devTaskList.remove(i);
                     notifyItemRemoved(i);
                     break; // Dừng vòng lặp sau khi đã xóa
@@ -93,70 +102,131 @@ public class DevTaskAdapter2 extends RecyclerView.Adapter<DevTaskAdapter2.DevTas
         selectedTaskIds.clear();
     }
     private void showEditDialog(DevTask task, int position) {
-        // Create dialog to edit task
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         View view = LayoutInflater.from(context).inflate(R.layout.dialog_edit_task, null);
         builder.setView(view);
 
         EditText etDevName = view.findViewById(R.id.etDevName);
-        Spinner spinnerTaskName = view.findViewById(R.id.spinnerTaskName);
+        EditText etTaskName = view.findViewById(R.id.etTaskName);
         EditText etStartDate = view.findViewById(R.id.etStartDate);
         EditText etEndDate = view.findViewById(R.id.etEndDate);
         EditText etEstimateDay = view.findViewById(R.id.etEstimateDay);
 
-        etStartDate.setOnClickListener(v -> showDateTimePicker(etStartDate));
-        etEndDate.setOnClickListener(v -> showDateTimePicker(etEndDate));
+        // Thiết lập DatePicker cho Start Date
+        etStartDate.setOnClickListener(v -> showDateTimePicker(etStartDate, () -> updateEstimateDay(etStartDate, etEndDate, etEstimateDay)));
 
-        // Lấy danh sách tasks từ cơ sở dữ liệu
-        List<Task> taskList = dbHelper.getAllTasks();
-        List<String> taskNames = new ArrayList<>();
-        for (Task t : taskList) {
-            taskNames.add(t.getTaskName());
-        }
-
-        // Thiết lập adapter cho Spinner
-        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(context, android.R.layout.simple_spinner_item, taskNames);
-        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerTaskName.setAdapter(spinnerAdapter);
+        // Thiết lập DatePicker cho End Date
+        etEndDate.setOnClickListener(v -> showDateTimePicker(etEndDate, () -> updateEstimateDay(etStartDate, etEndDate, etEstimateDay)));
 
         // Thiết lập thông tin ban đầu
         etDevName.setText(task.getDevName());
+        etTaskName.setText(task.getTaskName()); // Hiển thị tên task
         etStartDate.setText(task.getStartDate());
         etEndDate.setText(task.getEndDate());
         etEstimateDay.setText(String.valueOf(task.getEstimateDay()));
 
-        // Lấy Task ID và Estimate Day từ Task Name đã chọn
-        int[] selectedTaskId = {0};
-        spinnerTaskName.setSelection(taskNames.indexOf(task.getTaskName()));
-        spinnerTaskName.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
-                Task selectedTask = taskList.get(position);
-                selectedTaskId[0] = selectedTask.getTaskID();
-                etEstimateDay.setText(String.valueOf(selectedTask.getEstimateDay()));
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parentView) {
-                selectedTaskId[0] = 0; // Default value
-            }
-        });
-
         builder.setTitle("Edit Task")
                 .setPositiveButton("Save", (dialog, which) -> {
-                    String devName = etDevName.getText().toString(); // Lấy tên developer
-                    updateTask(position, task.getId(), devName, selectedTaskId[0], etStartDate.getText().toString(), etEndDate.getText().toString());
+                    String devName = etDevName.getText().toString();
+                    String taskName = etTaskName.getText().toString().trim(); // Nhập tên task từ bàn phím
+
+                    // Kiểm tra trùng tên task
+                    if (dbHelper.isTaskNameExists(taskName) && !taskName.equals(task.getTaskName())) {
+                        Toast.makeText(context, "Task name already exists!", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    if(!isStartDateOrEndDateValid(etStartDate.getText().toString(), etEndDate.getText().toString())){
+                        Toast.makeText(context, "Both Start Date and End Date must either be both empty or both have values. If one has a value, the other must also have a value.", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+
+                    if (!isValidDateRange(etStartDate.getText().toString(), etEndDate.getText().toString())) {
+                        Toast.makeText(context, "End Date must be greater than or equal to Start Date.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    DevTask currentTask = devTaskList.get(position); // Lấy task hiện tại
+                    updateTask(position, currentTask.getId(), devName, taskName, etStartDate.getText().toString(), etEndDate.getText().toString(), Integer.parseInt(etEstimateDay.getText().toString()), currentTask.getTaskId());
+                    Toast.makeText(context, "Task Updated Successfully!", Toast.LENGTH_LONG).show();
+
                 })
                 .setNegativeButton("Delete", (dialog, which) -> {
-                    deleteTask(task.getId(), position);
+                    // Hiển thị hộp thoại xác nhận
+                    new AlertDialog.Builder(context)
+                            .setTitle("Confirm Delete")
+                            .setMessage("Are you sure you want to delete this task?")
+                            .setPositiveButton("OK", (confirmDialog, confirmWhich) -> {
+                                // Nếu người dùng chọn "OK", xóa task
+                                deleteTask(task.getId(), position);
+                                Toast.makeText(context, "Task Deleted Successfully.", Toast.LENGTH_LONG).show();
+                            })
+                            .setNegativeButton("Cancel", (confirmDialog, confirmWhich) -> {
+                                // Nếu người dùng chọn "Cancel", đóng hộp thoại xác nhận
+                                confirmDialog.dismiss();
+                            })
+                            .show();
                 })
                 .setNeutralButton("Cancel", null);
 
         builder.create().show();
     }
+    public boolean isStartDateOrEndDateValid(String startDate, String endDate) {
+        // Trả về true nếu cả startDate và endDate đều không trống, hoặc cả hai đều trống
+        return (!startDate.isEmpty() && !endDate.isEmpty()) || (startDate.isEmpty() && endDate.isEmpty());
+    }
 
+    // Hàm để cập nhật estimateDay
+    private void updateEstimateDay(EditText etStartDate, EditText etEndDate, EditText etEstimateDay) {
+        String startDate = etStartDate.getText().toString();
+        String endDate = etEndDate.getText().toString();
 
-    private void showDateTimePicker(EditText editText) {
+        // Tính Estimate Day
+        if (!startDate.isEmpty() && !endDate.isEmpty()) {
+            int estimateDay = calculateEstimateDays(startDate, endDate);
+            etEstimateDay.setText(String.valueOf(estimateDay)); // Cập nhật EditText với giá trị tính toán
+        } else {
+            etEstimateDay.setText(""); // Nếu một trong hai rỗng, xóa giá trị estimateDay
+        }
+    }
+
+    public boolean isValidDateRange(String startDateStr, String endDateStr) {
+        if (startDateStr.isEmpty() || endDateStr.isEmpty()) {
+            return true; // Không cần kiểm tra nếu một trong hai trống
+        }
+
+        try {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
+            Date startDate = dateFormat.parse(startDateStr);
+            Date endDate = dateFormat.parse(endDateStr);
+            return startDate != null && endDate != null && !startDate.after(endDate);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public int calculateEstimateDays(String startDateStr, String endDateStr) {
+        if (startDateStr.isEmpty() || endDateStr.isEmpty()) {
+            return 0; // Không tính estimate nếu một trong hai trống
+        }
+
+        try {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
+            Date startDate = dateFormat.parse(startDateStr);
+            Date endDate = dateFormat.parse(endDateStr);
+
+            if (startDate != null && endDate != null) {
+                long differenceInMillis = endDate.getTime() - startDate.getTime();
+                return (int) (differenceInMillis / (1000 * 60 * 60 * 24))+1; // Số ngày
+            }
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    private void showDateTimePicker(EditText editText, Runnable onDateSet) {
         Calendar calendar = Calendar.getInstance();
         int year = calendar.get(Calendar.YEAR);
         int month = calendar.get(Calendar.MONTH);
@@ -167,7 +237,10 @@ public class DevTaskAdapter2 extends RecyclerView.Adapter<DevTaskAdapter2.DevTas
         DatePickerDialog datePickerDialog = new DatePickerDialog(context, (view, selectedYear, selectedMonth, selectedDay) -> {
             TimePickerDialog timePickerDialog = new TimePickerDialog(context, (timeView, selectedHour, selectedMinute) -> {
                 String dateTime = String.format("%02d/%02d/%04d %02d:%02d", selectedDay, selectedMonth + 1, selectedYear, selectedHour, selectedMinute);
-                editText.setText(dateTime); // Thay vì textView.setText(dateTime);
+                editText.setText(dateTime); // Cập nhật EditText với ngày giờ đã chọn
+
+                // Gọi callback để cập nhật estimateDay
+                onDateSet.run();
             }, hour, minute, true);
             timePickerDialog.show();
         }, year, month, day);
@@ -182,19 +255,13 @@ public class DevTaskAdapter2 extends RecyclerView.Adapter<DevTaskAdapter2.DevTas
     }
 
     // Method to update task
-    // Method to update task
-    private void updateTask(int position, long id, String devName, int taskId, String startDate, String endDate) {
-        // Cập nhật vào cơ sở dữ liệu
-        dbHelper.updateDevTask(id, devName, taskId, startDate, endDate);
-
+    public void updateTask(int position, long id, String devName, String taskName, String startDate, String endDate, int estimateDay , int taskId) {
+        dbHelper.updateDevTask(id, devName, taskName, startDate, endDate,estimateDay, taskId);
+        DevTask updatedTask = new DevTask(id, devName, taskName, startDate, endDate, estimateDay,taskId);
         // Cập nhật danh sách devTaskList
-        DevTask updatedTask = new DevTask(id, devName, taskId, startDate, endDate, getTaskNameById(taskId), getEstimateDayById(taskId));
-
-        // Thay đổi task tại vị trí đã cho
         devTaskList.set(position, updatedTask);
-
-        // Cập nhật adapter
-        notifyItemChanged(position); // Không cần gọi adapter
+        // Cập nhật lại adapter
+        notifyItemChanged(position);
     }
 
 
@@ -213,7 +280,8 @@ public class DevTaskAdapter2 extends RecyclerView.Adapter<DevTaskAdapter2.DevTas
 
 
     private void deleteTask(long id, int position) {
-        dbHelper.deleteDevTask((int) id); // Xóa task từ cơ sở dữ liệu
+        DevTask currentTask = devTaskList.get(position);
+        dbHelper.deleteDevTask((int) id, currentTask.getTaskId()); // Xóa task từ cơ sở dữ liệu
 
         // Xóa task khỏi danh sách đầy đủ
         DevTask taskToRemove = devTaskList.get(position);
