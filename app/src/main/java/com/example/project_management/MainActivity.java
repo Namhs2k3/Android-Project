@@ -94,12 +94,12 @@ public class MainActivity extends AppCompatActivity {
         ImageButton settingsButton = (ImageButton) findViewById(R.id.menu_settings);
         settingsButton.setOnClickListener(v -> showSettingsMenu()); // Gọi showSettingsMenu()
 
-//        // Load the preference in onCreate to apply it immediately
-//        SharedPreferences preferences = getSharedPreferences("settings", MODE_PRIVATE);
-//        boolean isEstimateDayVisible = preferences.getBoolean("showEstimateDay", false);
-//
-//        // Pass this value to the adapter initially
-//        adapter.setShowEstimateDay(isEstimateDayVisible);
+        // Load the preference in onCreate to apply it immediately
+        SharedPreferences preferences = getSharedPreferences("settings", MODE_PRIVATE);
+        boolean isEstimateDayVisible = preferences.getBoolean("showEstimateDay", false);
+
+        // Pass this value to the adapter initially
+        adapter.setShowEstimateDay(isEstimateDayVisible);
 
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
